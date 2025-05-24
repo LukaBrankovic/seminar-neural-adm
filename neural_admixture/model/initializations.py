@@ -73,18 +73,48 @@ def determine_device_for_tensors(data_shape: tuple, K: int, device: torch.device
     return device_tensors
 
 def pca_plot(X_pca: np.ndarray, path: str) -> None:
-    """Helper function to render a PCA plot
+    """Helper function to render a PCA plot with axis labels and visible tick values.
 
     Args:
-        X_pca (np.ndarray): projected data
+        X_pca (np.ndarray): projected data (samples x components).
+                            Assumes at least 2 components for a 2D plot.
         path (str): output file path
     """
+    if X_pca.shape[1] < 2:
+        if hasattr(log, 'warning'): # Check if logger is available
+            log.warning("    PCA data has fewer than 2 components, cannot create 2D scatter plot.")
+        else:
+            print("Warning: PCA data has fewer than 2 components, cannot create 2D scatter plot.")
+        return
+
     plt.figure(figsize=(15,10))
-    plt.scatter(X_pca[:,0], X_pca[:,1], s=.9, c='black')
-    plt.xticks([])
-    plt.yticks([])
-    plt.title('Training data projected onto first two components')
-    plt.savefig(path)
+    plt.scatter(X_pca[:,0], X_pca[:,1], s=.9, c='black', alpha=0.6) # alpha added for better visibility
+    
+    # Add simple axis labels
+    plt.xlabel("Principal Component 1", fontsize=14)
+    plt.ylabel("Principal Component 2", fontsize=14)
+    
+    # Ensure ticks and their values are shown (by not calling plt.xticks([]) / plt.yticks([]))
+    # You can optionally style them if needed, e.g., plt.xticks(fontsize=12)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    
+    plt.title('Training data projected onto first two components', fontsize=16)
+    plt.grid(True, linestyle='--', alpha=0.7) # Optional: add a grid
+    
+    try:
+        plt.savefig(path)
+        if hasattr(log, 'info'):
+            log.info(f"    PCA plot saved to {path}")
+        else:
+            print(f"    PCA plot saved to {path}")
+    except Exception as e:
+        if hasattr(log, 'error'):
+            log.error(f"    Failed to save PCA plot to {path}: {e}")
+        else:
+            print(f"Error: Failed to save PCA plot to {path}: {e}")
+    finally:
+        plt.close() # Important to free memory
     return
 
 def load_or_compute_pca(path: Optional[str], X: np.ndarray, n_components: int, batch_size: int, 
